@@ -1,0 +1,17 @@
+name: Release
+on: {push: {tags: ['v*']}}
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions: {contents: write}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with: {go-version: '1.22'}
+      - run: GOOS=linux GOARCH=amd64 go build -o data-profile-linux-amd64 .
+      - run: GOOS=linux GOARCH=arm64 go build -o data-profile-linux-arm64 .
+      - run: GOOS=darwin GOARCH=amd64 go build -o data-profile-darwin-amd64 .
+      - run: GOOS=darwin GOARCH=arm64 go build -o data-profile-darwin-arm64 .
+      - run: sha256sum data-profile-* > checksums.txt
+      - uses: softprops/action-gh-release@v2
+        with: {files: "data-profile-*"}
