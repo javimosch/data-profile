@@ -2,8 +2,7 @@ package main
 import ("bufio";"encoding/csv";"encoding/json";"fmt";"os";"path/filepath";"strconv";"strings")
 func main() {
 	if len(os.Args) < 2 { fmt.Fprintln(os.Stderr,"Usage: data-profile <file>"); os.Exit(1) }
-	path := os.Args[1]
-	ext := strings.ToLower(filepath.Ext(path))
+	path := os.Args[1]; ext := strings.ToLower(filepath.Ext(path))
 	if ext == ".jsonl" || ext == ".ndjson" { profileJSONL(path); return }
 	profileCSV(path)
 }
@@ -15,7 +14,7 @@ func profileCSV(path string) {
 	fmt.Printf(`{"file":"%s","format":"csv","columns":%d,"rows":%d,"profile":[`, path, cols, len(rows)-1)
 	for i := 0; i < cols; i++ {
 		if i > 0 { fmt.Println(",") }
-		name := rows[0][i]; nulls, nums := 0, []float64{}; strSet := map[string]int{}
+		name := rows[0][i]; nulls := 0; nums := []float64{}; strSet := map[string]int{}
 		for _, row := range rows[1:] {
 			if i >= len(row) || row[i] == "" { nulls++; continue }
 			v := strings.TrimSpace(row[i]); strSet[v]++
@@ -33,10 +32,8 @@ func profileCSV(path string) {
 }
 func profileJSONL(path string) {
 	f, _ := os.Open(path); defer f.Close()
-	scanner := bufio.NewScanner(f)
-	var sample []map[string]any
-	allKeys := map[string]map[string]int{}
-	rowCount := 0
+	scanner := bufio.NewScanner(f); var sample []map[string]any
+	allKeys := map[string]map[string]int{}; rowCount := 0
 	for scanner.Scan() {
 		rowCount++; line := strings.TrimSpace(scanner.Text())
 		if line == "" { continue }
@@ -50,11 +47,8 @@ func profileJSONL(path string) {
 	}
 	fmt.Printf(`{"file":"%s","format":"jsonl","rows":%d,"keys":%d,"schema":[`, path, rowCount, len(allKeys))
 	first := true
-	for k, vals := range allKeys {
-		if !first { fmt.Println(",") }; first = false
-		fmt.Printf(`{"key":"%s","unique":%d}`, k, len(vals))
-	}
-	fmt.Println(`],"samples":[')
+	for k, vals := range allKeys { if !first { fmt.Println(",") }; first = false; fmt.Printf(`{"key":"%s","unique":%d}`, k, len(vals)) }
+	fmt.Println(`],"samples":[`)
 	for i, s := range sample { if i > 0 { fmt.Println(",") }; b, _ := json.Marshal(s); fmt.Print(string(b)) }
 	fmt.Println("]}")
 }
